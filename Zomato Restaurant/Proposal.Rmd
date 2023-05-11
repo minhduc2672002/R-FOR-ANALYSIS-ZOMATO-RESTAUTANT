@@ -1,0 +1,243 @@
+---
+title: "Proposal"
+author: "Nhóm 5: Trần Văn Thắng, Trần Minh Đức, Lê Minh Hoàng"
+date: "2022-11-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-packages, message=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(ggridges)
+```
+
+## 1. Giới thiệu
+
+-   Mục tiêu của nghiên cứu là phân tích tập dữ liệu nhà hàng thu được từ trang web "Zomato" và thực hiện các thử nghiệm giả thuyết thống kê khác nhau để kết luận được những thông tin có ý nghĩa từ dataset. Zomato là 1 nền tảng đặt đồ ăn lớn nhất của Ấn Độ, đây là một nền tảng mà khách hàng có thể gọi món từ những thành phố lớn của quốc gia này cũng như 1 vài thành phố lớn của các quốc gia lân cận.
+
+    \- Nghiên cứu kỹ lưỡng về dữ liệu sẽ giúp khám phá những hiểu biết sâu sắc có giá trị to lớn đối với khách hàng. Thông qua dữ liệu đã thu thập được và dựa trên các mô hình sẽ được tính toán nhằm đưa ra kết luận tốt nhất.
+
+-   Tập dữ liệu để phân tích được lấy từ trang web: [Dữ liệu nhà hàng Zomato \| Kaggle](https://www.kaggle.com/datasets/shrutimehta/zomato-restaurants-data) Mỗi nhà hàng trong tập dữ liệu được xác định duy nhất bởi Id nhà hàng của nó. Mỗi Nhà hàng đều chứa các biến số sau:
+
+    | Các biến số trong dataset:                                                                                          |
+    |---------------------------------------------------------------------------------------------------------------------|
+    | **1. Restaurant ID**: ID nhà hàng                                                                                   |
+    | **2**. **Restaurant Name**: Tên nhà hàng                                                                            |
+    | **3. Country Code**: Mã quốc gia, nơi có nhà hàng                                                                   |
+    | **4. City**: Thành phố, nơi có nhà hàng                                                                             |
+    | **5. Address**: Địa chỉ nhà hàng                                                                                    |
+    | **6. Locality**: Địa phương, vị trí trong thành phố                                                                 |
+    | **7. Locality Verbose**: Chi tiết về địa phương, mô tả chi tiết về địa phương                                       |
+    | **8. Longitude:** Tọa độ kinh độ vị trí của nhà hàng                                                                |
+    | **9. Latitude:** Tọa độ vĩ độ vị trí của nhà hàng                                                                   |
+    | **10. Cuisines:** Món ăn,các loại món ăn do nhà hàng cung cấp                                                       |
+    | **11. Average Cost for two:** Chi phí trung bình cho 2 người ăn                                                     |
+    | **12. Currency**: Đơn vị tiền tệ                                                                                    |
+    | **13. Has Table booking**: Có đặt bàn: Yes/No                                                                       |
+    | **14. Has Online delivery:** Có giao hàng trực tuyến: Yes/No                                                        |
+    | **15. Is delivering now**: Đang giao hàng: Yes/No                                                                   |
+    | **16. Switch to order menu:** Chuyển sang menu gọi món: Yes/No                                                      |
+    | **17. Price range:** phạm vi giá thức ăn (1-4)                                                                      |
+    | **18. Aggregate rating:** Xếp hạng tổng hợp(thang điểm 0-5 sao)                                                     |
+    | **19. Rating color:** Màu đánh giá, tùy thuộc vào màu đánh giá trung bình (Orange,white, Yellow, Green, Dark Green) |
+    | **20. Rating text:** Văn bản xếp hạng,trên cơ sở đánh giá xếp hạng (Average, Not rated, Good, Very Good,Excellent)  |
+    | **21. Votes:** Số phiếu bầu: Số lượng xếp hạng của mọi người                                                        |
+
+#### *- Câu hỏi nghiên cứu:*
+
+1.  *Dữ liệu có cung cấp bằng chứng cho thấy những nhà hàng không cho đặt bàn trước có số lượt Votes nhiều hơn đáng kể so với những nhà hàng cho đặt trước hay không?*
+
+2.  *Dữ liệu có cung cấp bằng chứng cho thấy những nhà hàng không có giao hàng trực tuyến có số lượt Votes nhiều hơn đáng kể so với những nhà hàng có giao hàng trực tuyến hay không?*
+
+3.  *Dữ liệu có cung cấp bằng chứng cho thấy số tiền trung bình để 2 người ăn tại nhà hàng có quyết định số lượt Votes ở mỗi nhà hàng hay không?*
+
+4.  *Dữ liệu có cung cấp bằng chứng về "hiệu ứng cấp độ" đáng kể đối với số lượt vote hay không?*
+
+## 2. Dữ liệu
+
+-   Đọc file dữ liệu
+
+    ```{r}
+    data <- read.csv("./data/zomato_restaurants.csv",header = T)
+    ```
+
+-   Số lượng dòng và cột trong dataset
+
+    ```{r}
+    dim(data)
+    names(data)
+    ```
+
+-   Hiển thị thông tin , kiểu dữ liệu của các thuộc tính
+
+    ```{r}
+    str(data)
+    ```
+
+-   Hiển thị 5 dòng ngẫu nhiên.
+
+    ```{r}
+    sample_n(data,5)
+
+    ```
+
+-   Tổng số dòng mang giá trị na:
+
+    ```{r}
+    sum(is.na(data))
+    ```
+
+## 3. Kế hoạch phân tích dữ liệu
+
+#### a, Các biến kết quả và giải thích
+
+-   **Biến kết quả**: Votes
+
+-   **Biến giải thích**: Has Table booking, Has Online delivery, Average cost for two, Price range
+
+#### b, Phân tích dữ liệu
+
+-   Để thuận tiện hơn trong việc phân tích chúng ta sẽ thống kê các nhà hàng có và không có dịch vụ đặt bàn trước, các nhà hàng có và không có dịch vụ giao hàng trực tuyến
+
+    ```{r}
+    has_booking <- subset(data,Has.Table.booking=="Yes")
+    head(has_booking)
+    hasnt_booking <- subset(data,Has.Table.booking=="No")
+    head(hasnt_booking)
+
+    has_delivery <- subset(data,Has.Online.delivery=="Yes")
+    head(has_delivery)
+    hasnt_delivery <- subset(data,Has.Online.delivery=="No")
+    head(hasnt_delivery)
+    ```
+
+-   Dựa vào dataset ta sẽ thay thế các giá trị yes/no ở 2 cột Has Table booking và Has Online delivery bằng các giá trị 1/0 tương ứng để dễ dàng quan sát và phân tích
+
+    ```{r}
+    data$Has.Table.booking <- ifelse(data$Has.Table.booking=="Yes",1,0)
+    data$Has.Online.delivery <- ifelse(data$Has.Online.delivery=="Yes",1,0)
+    head(data)
+    ```
+
+-   Số tiền trung bình chi phí cho hai người bằng các đơn vị tiền tệ khác nhau thấp nhất và cao nhất trong mẫu chọn
+
+    ```{r}
+    min(data$Average.Cost.for.two)
+    max(data$Average.Cost.for.two)
+    ```
+
+-   15 nhà hàng có lượt votes cao nhất
+
+    ```{r}
+    data %>%
+      select(Restaurant.Name,Has.Table.booking,Has.Online.delivery,Average.Cost.for.two,Rating.color,Rating.text,Votes) %>%
+      arrange(Votes) %>%
+      tail(15)%>%
+      ggplot(aes(x=Restaurant.Name,y=Votes))+
+      geom_histogram(stat="identity",fill="#bb0000")+
+      coord_flip()
+      
+    ```
+
+-   Số lượng nhà hàng có và không có dịch vụ đặt bàn trước
+
+    ```{r}
+    as.data.frame(table(data$Has.Table.booking)) %>%
+      ggplot(aes(x=Var1,y=Freq,fill=Var1))+
+        geom_bar(stat="identity",show.legend = FALSE) +
+        xlab("Has Table booking")+
+        ylab("Quantity")+
+      theme_bw()
+    ```
+
+-   Số lượng nhà hàng có và không có dịch vụ giao hàng online
+
+    ```{r}
+    as.data.frame(table(data$Has.Online.delivery)) %>%
+      ggplot(aes(x=Var1,y=Freq,fill=Var1))+
+        geom_bar(stat="identity",show.legend = FALSE) +
+        xlab("Has Online delivery")+
+        ylab("Quantity")+
+      theme_bw()
+    ```
+
+-   Những nhà hàng có dịch vụ đặt bàn trước chủ yếu ở các thành phố
+
+    ```{r}
+    gg <- data %>%
+            filter(Has.Table.booking==1) %>%
+            select(City)
+    as.data.frame(table(gg)) %>%
+      ggplot(aes(x=City,y=Freq))+
+      geom_bar(stat="identity",fill='forest green',show.legend = FALSE)+
+      coord_flip()+
+      ylab("value")+
+      theme_minimal()
+    ```
+
+-   Chi phí trung bình cho 2 người đối với phạm vi giá thức ăn phổ biến
+
+```{r}
+data %>%
+ggplot(aes(y = as.factor(Price.range))) +
+  geom_density_ridges(aes(x = Average.Cost.for.two),
+                      alpha = .5, color = "white", from = 0, to = 8000,fill='#cb202d') +
+  labs(x = "Average Cost for Two",
+       y = "Price Raneg",
+       title = "Price Ranges",
+       subtitle = "",
+       caption = "")+
+  theme(plot.title = element_text(hjust=0.5,face='bold',color='#2d2d2d'),panel.background = element_blank(),
+        strip.text = element_text(face='bold',color='#2d2d2d'),axis.text.x = element_text(face='bold',color='#2d2d2d'),
+        axis.text = element_text(face='bold',color='#2d2d2d'))
+```
+
+#### c, Các phương pháp giúp trả lời các câu hỏi đã đưa ra
+
+-   Sử dụng biểu đồ side-by-side boxplot để phù hợp hơn với các biến và đưa ra kết luận cho các câu hỏi đã đưa ra
+
+-   Sử dụng phương pháp phân tích dữ liệu thăm dò để giúp ta tóm tắt các đặc điểm quan trọng của dữ liệu
+
+-   Ví dụ: Ta có dữ liệu như sau: gồm biểu đồ và các thông tin cần thiết như min,max,mean... để trả lời câu hỏi 1
+
+    ```{r}
+    # x là explanatory variable
+    # y là response variable
+
+    # plot
+       ggplot(data,aes(x=as.character(Has.Table.booking),y=Votes))+
+    geom_boxplot()+
+    theme_classic()+
+         xlab("Has Table booking")+
+        ylab("Votes")
+
+    # summary statistics
+    tapply(data$Votes, factor(data$Has.Table.booking), summary)
+    ```
+
+-   Ta đã biết được các đặc trưng quan trọng của dữ liệu sử dụng phân tích dữ liệu thăm dò. Bây giờ chúng ta chuyển sang đánh giá độ mạnh của bằng chứng do dữ liệu cung cấp bằng cách sử dụng các kiểm định thống kê.
+
+-   <div>
+
+    -   Kiểm định thống kê phù hợp với câu hỏi: two sample t-test for two means ($\mu_1, \mu_2$)
+    -   Các giả thuyết: Null hypothesis: $H_0:\mu_1 - \mu_2 = 0$ và Alternative hypothesis: $H_A:\mu_1 - \mu_2 < 0$
+
+    </div>
+
+#### d, Kế hoạch thực hiện và phân công việc
+
+|                                                                                                    | Trần Văn Thắng | Trần Minh Đức | Lê Minh Hoàng |
+|:--------------------------------------------------------------------------------------------------:|:--------------:|:-------------:|:-------------:|
+|                                 chuẩn bị đề tài, đọc lướt dữ liệu                                  |       x        |       x       |       x       |
+|                                    đăt và trả lời các câu hỏi:                                     |       x        |       x       |       x       |
+|                                             câu hỏi 1                                              |       x        |       x       |               |
+|                                             câu hỏi 2                                              |                |       x       |       x       |
+|                                             câu hỏi 3                                              |       x        |               |       x       |
+|                                             câu hỏi 4                                              |       x        |       x       |       x       |
+|                                        đưa ra các kết luận                                         |       x        |       x       |       x       |
+| Tìm hiểu về các phương pháp để phân tích dữ liệu như phân tích dữ liệu thăm dò, kiểm định thống kê |       x        |       x       |       x       |

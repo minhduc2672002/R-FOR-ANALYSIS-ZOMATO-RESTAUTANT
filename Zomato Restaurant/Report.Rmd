@@ -1,0 +1,621 @@
+---
+output: html_document
+Nhóm 5:
+Trần Minh Đức:       20133037
+Trần Văn Thắng:      20133121
+Lê Minh Hoàng:       20161317
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-packages, message=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(ggridges)
+```
+
+## 1. Giới thiệu
+
+-   Mục tiêu của nghiên cứu là phân tích tập dữ liệu nhà hàng thu được từ trang web "Zomato" và thực hiện các thử nghiệm giả thuyết thống kê khác nhau để kết luận được những thông tin có ý nghĩa từ dataset. Zomato là 1 nền tảng đặt đồ ăn lớn nhất của Ấn Độ, đây là một nền tảng mà khách hàng có thể gọi món từ những thành phố lớn của quốc gia này cũng như 1 vài thành phố lớn của các quốc gia lân cận.
+
+    \- Nghiên cứu kỹ lưỡng về dữ liệu sẽ giúp khám phá những hiểu biết sâu sắc có giá trị to lớn đối với khách hàng. Thông qua dữ liệu đã thu thập được và dựa trên các mô hình sẽ được tính toán nhằm đưa ra kết luận tốt nhất. \|\
+
+### Câu hỏi nghiên cứu:
+
+1.  *Dữ liệu có cung cấp bằng chứng cho thấy những nhà hàng không cho đặt bàn trước có số lượt Votes nhiều hơn đáng kể so với những nhà hàng cho đặt trước hay không?*
+
+2.  *Dữ liệu có cung cấp bằng chứng cho thấy những nhà hàng không có giao hàng trực tuyến có số lượt Votes nhiều hơn đáng kể so với những nhà hàng có giao hàng trực tuyến hay không?*
+
+3.  *Dữ liệu có cung cấp bằng chứng cho thấy số tiền trung bình để 2 người ăn tại nhà hàng có quyết định số lượt Votes ở mỗi nhà hàng hay không?*
+
+4.  *Dữ liệu có cung cấp bằng chứng về "hiệu ứng cấp độ" đáng kể đối với số lượt vote hay không?*
+
+## 2. Dữ liệu
+
+-   Tập dữ liệu để phân tích được lấy từ trang web: [Dữ liệu nhà hàng Zomato \| Kaggle](https://www.kaggle.com/datasets/shrutimehta/zomato-restaurants-data) Mỗi nhà hàng trong tập dữ liệu được xác định duy nhất bởi Id nhà hàng của nó. Mỗi Nhà hàng đều chứa các biến số sau:
+
+    | Các biến số trong dataset:                                                                                          |
+    |------------------------------------------------------------------------|
+    | **1. Restaurant ID**: ID nhà hàng                                                                                   |
+    | **2**. **Restaurant Name**: Tên nhà hàng                                                                            |
+    | **3. Country Code**: Mã quốc gia, nơi có nhà hàng                                                                   |
+    | **4. City**: Thành phố, nơi có nhà hàng                                                                             |
+    | **5. Address**: Địa chỉ nhà hàng                                                                                    |
+    | **6. Locality**: Địa phương, vị trí trong thành phố                                                                 |
+    | **7. Locality Verbose**: Chi tiết về địa phương, mô tả chi tiết về địa phương                                       |
+    | **8. Longitude:** Tọa độ kinh độ vị trí của nhà hàng                                                                |
+    | **9. Latitude:** Tọa độ vĩ độ vị trí của nhà hàng                                                                   |
+    | **10. Cuisines:** Món ăn,các loại món ăn do nhà hàng cung cấp                                                       |
+    | **11. Average Cost for two:** Chi phí trung bình cho 2 người ăn                                                     |
+    | **12. Currency**: Đơn vị tiền tệ                                                                                    |
+    | **13. Has Table booking**: Có đặt bàn: Yes/No                                                                       |
+    | **14. Has Online delivery:** Có giao hàng trực tuyến: Yes/No                                                        |
+    | **15. Is delivering now**: Đang giao hàng: Yes/No                                                                   |
+    | **16. Switch to order menu:** Chuyển sang menu gọi món: Yes/No                                                      |
+    | **17. Price range:** phạm vi giá thức ăn (1-4)                                                                      |
+    | **18. Aggregate rating:** Xếp hạng tổng hợp(thang điểm 0-5 sao)                                                     |
+    | **19. Rating color:** Màu đánh giá, tùy thuộc vào màu đánh giá trung bình (Orange,white, Yellow, Green, Dark Green) |
+    | **20. Rating text:** Văn bản xếp hạng,trên cơ sở đánh giá xếp hạng (Average, Not rated, Good, Very Good,Excellent)  |
+    | **21. Votes:** Số phiếu bầu: Số lượng xếp hạng của mọi người                                                        |
+
+-   Đọc file dữ liệu
+
+    ```{r}
+    data <- read.csv("./data/zomato_restaurants.csv",header = T)
+    ```
+
+-   Số lượng dòng và cột trong dataset
+
+    ```{r}
+    dim(data)
+    names(data)
+    ```
+
+-   Hiển thị thông tin , kiểu dữ liệu của các thuộc tính
+
+    ```{r}
+    str(data)
+    ```
+
+-   Hiển thị 5 dòng ngẫu nhiên.
+
+    ```{r}
+    sample(data,5)
+
+    ```
+
+-   Tổng số dòng mang giá trị na:
+
+    ```{r}
+    sum(is.na(data))
+    ```
+
+## 3. Trực quan hóa dữ liệu
+
+#### a, Các biến kết quả và giải thích
+
+-   **Biến kết quả**: Votes
+
+-   **Biến giải thích**: Has Table booking, Has Online delivery, Average cost for two, Price range
+
+#### b, Phân tích dữ liệu
+
+-   Để thuận tiện hơn trong việc phân tích chúng ta sẽ thống kê các nhà hàng có và không có dịch vụ đặt bàn trước, các nhà hàng có và không có dịch vụ giao hàng trực tuyến
+
+    ```{r}
+    has_booking <- subset(data,Has.Table.booking=="Yes")
+    head(has_booking)
+    hasnt_booking <- subset(data,Has.Table.booking=="No")
+    head(hasnt_booking)
+
+    has_delivery <- subset(data,Has.Online.delivery=="Yes")
+    head(has_delivery)
+    hasnt_delivery <- subset(data,Has.Online.delivery=="No")
+    head(hasnt_delivery)
+    ```
+
+-   Dựa vào dataset ta sẽ thay thế các giá trị yes/no ở 2 cột Has Table booking và Has Online delivery bằng các giá trị 1/0 tương ứng để dễ dàng quan sát và phân tích
+
+    ```{r}
+    data$Has.Table.booking <- ifelse(data$Has.Table.booking=="Yes",1,0)
+    data$Has.Online.delivery <- ifelse(data$Has.Online.delivery=="Yes",1,0)
+    head(data)
+    ```
+
+-   Số tiền trung bình chi phí cho hai người bằng các đơn vị tiền tệ khác nhau thấp nhất và cao nhất trong mẫu chọn
+
+    ```{r}
+    min(data$Average.Cost.for.two)
+    max(data$Average.Cost.for.two)
+    ```
+
+-   15 nhà hàng có lượt votes cao nhất
+
+    ```{r}
+     data %>%
+      select(Restaurant.Name,Has.Table.booking,Has.Online.delivery,Average.Cost.for.two,Rating.color,Rating.text,Votes) %>%
+      arrange(Votes) %>%
+      tail(15)%>%
+      ggplot(aes(x=Restaurant.Name,y=Votes))+
+      geom_histogram(stat="identity",fill="#bb0000")+
+      coord_flip()
+    ```
+
+-   Số lượng nhà hàng có và không có dịch vụ đặt bàn trước
+
+    ```{r}
+       as.data.frame(table(data$Has.Table.booking)) %>%
+      ggplot(aes(x=Var1,y=Freq,fill=Var1))+
+    geom_bar(stat="identity",show.legend = FALSE) +
+    xlab("Has Table booking")+
+    ylab("Quantity")+
+      theme_bw()
+    ```
+
+-   Số lượng nhà hàng có và không có dịch vụ giao hàng online
+
+    ```{r}
+    as.data.frame(table(data$Has.Online.delivery)) %>%
+      ggplot(aes(x=Var1,y=Freq,fill=Var1))+
+        geom_bar(stat="identity",show.legend = FALSE) +
+        xlab("Has Online delivery")+
+        ylab("Quantity")+
+      theme_bw()
+    ```
+
+-   Những nhà hàng có dịch vụ đặt bàn trước chủ yếu ở các thành phố
+
+    ```{r}
+    gg <- data %>%
+            filter(Has.Table.booking==1) %>%
+            select(City)
+    as.data.frame(table(gg)) %>%
+      ggplot(aes(x=City,y=Freq))+
+      geom_bar(stat="identity",fill='forest green',show.legend = FALSE)+
+      coord_flip()+
+      ylab("value")+
+      theme_minimal()
+    ```
+
+-   Chi phí trung bình cho 2 người đối với phạm vi giá thức ăn phổ biến
+
+```{r}
+data %>%
+ggplot(aes(y = as.factor(Price.range))) +
+  geom_density_ridges(aes(x = Average.Cost.for.two),
+                      alpha = .5, color = "white", from = 0, to = 8000,fill='#cb202d') +
+  labs(x = "Average Cost for Two",
+       y = "Price Raneg",
+       title = "Price Ranges",
+       subtitle = "",
+       caption = "")+
+  theme(plot.title = element_text(hjust=0.5,face='bold',color='#2d2d2d'),panel.background = element_blank(),
+        strip.text = element_text(face='bold',color='#2d2d2d'),axis.text.x = element_text(face='bold',color='#2d2d2d'),
+        axis.text = element_text(face='bold',color='#2d2d2d'))
+```
+
+## 4. Mô hình hóa dữ liệu
+
+-   Sử dụng biểu đồ side-by-side boxplot để phù hợp hơn với các biến và đưa ra kết luận cho các câu hỏi đã đưa ra
+
+-   Sử dụng phương pháp phân tích dữ liệu thăm dò để giúp ta tóm tắt các đặc điểm quan trọng của dữ liệu
+
+-   Ví dụ: Ta có dữ liệu như sau: gồm biểu đồ và các thông tin cần thiết như min,max,mean... để trả lời câu hỏi 1
+
+    ```{r}
+    # x là explanatory variable
+    # y là response variable
+
+    # plot
+       ggplot(data,aes(x=as.character(Has.Table.booking),y=Votes))+
+    geom_boxplot()+
+    theme_classic()+
+         xlab("Has Table booking")+
+        ylab("Votes")
+
+    # summary statistics
+    tapply(data$Votes, factor(data$Has.Table.booking), summary)
+    ```
+
+-   Ta đã biết được các đặc trưng quan trọng của dữ liệu sử dụng phân tích dữ liệu thăm dò. Bây giờ chúng ta chuyển sang đánh giá độ mạnh của bằng chứng do dữ liệu cung cấp bằng cách sử dụng các kiểm định thống kê.
+
+-   <div>
+
+    -   Kiểm định thống kê phù hợp với câu hỏi: two sample t-test for two means ($\mu_1, \mu_2$)
+    -   Các giả thuyết: Null hypothesis: $H_0:\mu_1 - \mu_2 = 0$ và Alternative hypothesis: $H_A:\mu_1 - \mu_2 < 0$
+
+    </div>
+
+
+## 5. Thực nghiệm kết quả và thảo luận
+
+**1**, Dữ liệu có cung cấp bằng chứng cho thấy những nhà hàng không cho đặt bàn trước có số lượt Votes nhiều hơn đáng kể so với những nhà hàng cho đặt trước hay không?
+
+<div>
+
+-   Để thực hiện kiểm định thống kê, ta tính test statistic:
+
+    ```{r}
+    mu1 = mean(hasnt_booking$Votes)
+    mu2 = mean(has_booking$Votes)
+
+    n1 = sum(table(has_booking$Has.Table.booking))
+    n2 = sum(table(hasnt_booking$Has.Table.booking))
+
+    s1 = var(has_booking$Votes)
+    s2 = var(hasnt_booking$Votes)
+
+    se = sqrt(s1/n1 + s2/n2)
+
+    t = (mu1 - mu2)/se
+    t
+    v = (s1/n1 + s2/n2)^2/((s1/n1)^2/(n1-1) + (s2/n2)^2/(n2-1))
+    v
+    p_value = pt(q = t, df = v) 
+    p_value
+    ```
+
+-   Kiểm tra lại `T-test` trong R
+
+    ```{r}
+    #Kiểm định H0: m1 - m2 = 0
+    #Phủ định giả thuyết Ha: m1 - m2 < 0 <=> m1 < m2
+    t.test(data$Votes~data$Has.Table.booking, alternative="less")
+    ```
+
+-   Kết quả: Vì $p$-value nhỏ hơn mức ý nghĩa $\alpha = 0.05$ nên ta bác bỏ $H_0$.
+
+-   Kết luận:
+
+    -   Phân tích thăm dò cho thấy sự khác biệt về số votes giữa nhà hàng cho đặt bàn trước và không cho đặt bàn trước.Cụ thể hơn,bỏ qua mặt số lượng nhà hàng thì những nhà hàng cho đặt bàn trước thường có số vote cao hơn những nhà hàng không cho đặt bàn trước.
+    -   Kiểm định thống kê cho ra giá trị $p$ rất nhỏ (về cơ bản là 0), cho thấy bằng chứng được cung cấp bởi dữ liệu đủ mạnh để bác bỏ $H_0$.
+
+</div>
+
+**2**. Dữ liệu có cung cấp bằng chứng cho thấy những nhà hàng không có giao hàng trực tuyến có số lượt Votes nhiều hơn đáng kể so với những nhà hàng có giao hàng trực tuyến hay không?
+
+```{r}
+# x là explanatory variable
+# y là response variable
+
+# plot
+ggplot(data,aes(x=as.character(Has.Online.delivery),y=Votes))+
+  geom_boxplot()+
+  theme_classic()+
+   xlab("Has Online delivery")+
+    ylab("Votes")
+
+# summary statistics
+tapply(data$Votes, factor(data$Has.Online.delivery), summary)
+```
+
+<div>
+
+-   Để thực hiện kiểm định thống kê, ta tính test statistic:
+
+    ```{r}
+    mu1 = mean(hasnt_delivery$Votes)
+    mu2 = mean(has_delivery$Votes)
+
+    n1 = sum(table(hasnt_delivery$Has.Online.delivery))
+    n2 = sum(table(has_delivery$Has.Online.delivery))
+
+    s1 = var(hasnt_delivery$Votes)
+    s2 = var(has_delivery$Votes)
+
+    se = sqrt(s1/n1 + s2/n2)
+
+    t = (mu1 - mu2)/se
+    t
+    v = (s1/n1 + s2/n2)^2/((s1/n1)^2/(n1-1) + (s2/n2)^2/(n2-1))
+    v
+    p_value = pt(q = t, df = v) 
+    p_value
+    ```
+
+-   Kiểm tra lại `T-test` trong R
+
+    ```{r}
+    #Kiểm định H0: m1 - m2 = 0
+    #Phủ định giả thuyết Ha: m1 - m2 < 0 <=> m1 < m2
+    t.test(data$Votes~data$Has.Online.delivery, alternative="less")
+    ```
+
+-   Kết quả: Vì $p$-value nhỏ hơn mức ý nghĩa $\alpha = 0.05$ nên ta bác bỏ Null hypothesis : $H_0$.
+
+-   Kết luận:
+
+    -   Phân tích thăm dò cho thấy sự khác biệt rõ rệt về số votes giữa nhà hàng có giao hàng online và không có giao hàng online .Cụ thể hơn, những nhà hàng có giao hàng online thường có số vote cao hơn những nhà hàng không có giao hàng online
+    -   Kiểm định thống kê cho ra giá trị $p$ rất nhỏ (về cơ bản là 0), cho thấy bằng chứng được cung cấp bởi dữ liệu đủ mạnh để bác bỏ $H_0$ và kết luận rằng tổng số votes giữa những nhà hàng không có giao hàng online là kém hơn đáng kể so với những nhà hàng có giao hàng online
+
+</div>
+
+**3**. Dữ liệu có cung cấp bằng chứng cho thấy số tiền trung bình để 2 người ăn tại nhà hàng có quyết định số lượt Votes ở mỗi nhà hàng hay không?
+
+```{r, echo=FALSE, eval=TRUE}
+# x là explanatory variable
+# y là response variable
+
+
+# plot
+ggplot(data,aes(x=as.character(Average.Cost.for.two),y=Votes))+
+  geom_boxplot()+
+  theme_classic()+
+    xlab("Average Cost for two")+
+    ylab("Votes")
+
+
+# summary statistics
+tapply(data$Votes, factor(data$Average.Cost.for.two), summary)
+
+
+```
+
+<div>
+
+-   Để thực hiện kiểm định thống kê, ta tính test statistic:
+
+    ```{r}
+    mu1 = mean(data$Average.Cost.for.two)
+    mu2 = mean(data$Votes)
+
+    n1 = sum(table(data$Average.Cost.for.two))
+    n2 = sum(table(data$Votes))
+
+    s1 = var(data$Average.Cost.for.two)
+    s2 = var(data$Votes)
+
+    se = sqrt(s1/n1 + s2/n2)
+
+    t = (mu1 - mu2)/se
+    t
+
+    v = (s1/n1 + s2/n2)^2/((s1/n1)^2/(n1-1) + (s2/n2)^2/(n2-1))
+    v
+
+    p_value = pt(q = t, df = v) 
+    p_value
+
+    p <- 1 - p_value
+    p
+    ```
+
+-   Kiểm tra lại `T-test` trong R
+
+    ```{r}
+    #Kiểm định H0: m1 - m2 = 0
+    #Phủ định giả thuyết Ha: m1 - m2 < 0 <=> m1 < m2
+    t.test(data$Average.Cost.for.two, data$Votes, alternative="less")
+    ```
+
+-   Kết quả: Vì $p$-value lớn hơn mức ý nghĩa $\alpha = 0.05$ nên ta chấp nhận giả thuyết Null hypothesis : $H_0$.
+
+-   Kết luận:
+
+    -   Phân tích thăm dò cho thấy không có sự khác biệt số votes giữa các nhà hàng thông qua chi phí trung bình cho 2 người khi ăn ở nhà hàng
+    -   Kiểm định thống kê cho ra giá trị p-value khá cao khi có giá trị 0.9586 lớn hơn 0.05 .Cho thấy biến chi phí cho hai người được cung cấp bởi dữ liệu không mạnh để bác bỏ H_0 và kết luận rằng tổng số votes giữa các nhà hàng không khác biệt với nhau
+
+</div>
+
+**4**. Dữ liệu có cung cấp bằng chứng về "hiệu ứng cấp độ" đáng kể đối với số lượt vote hay không?
+
+```{r, echo=FALSE, eval=TRUE}
+countrycode1 <- subset.data.frame(data,Country.Code == "1")
+
+Pricerange1 <- subset.data.frame(countrycode1, Price.range =="1")
+Pricerange2 <- subset.data.frame(countrycode1, Price.range =="2")
+Pricerange3 <- subset.data.frame(countrycode1, Price.range =="3")
+Pricerange4 <- subset.data.frame(countrycode1, Price.range =="4")
+
+
+Pricerange12 <- subset.data.frame(countrycode1, Price.range < 3)
+head(Pricerange12)
+
+Pricerange34 <- subset.data.frame(countrycode1, Price.range > 2)
+head(Pricerange34)
+
+Pricerange23 <- subset.data.frame(countrycode1, Price.range > 1 &  Price.range < 4 )
+head(Pricerange23)
+
+```
+
+-   Bước tiếp theo, chúng ta giải thích kết quả nhận được từ các phân tích trong bối cảnh của câu hỏi hiện tại.
+-   Kết quả nhận được cho thấy điều gì về sự khác biệt về tổng số votes giữa những nhà hàng cho đặt trước và không cho đặt trước?
+
+***4.1 Những nhà hàng có mức price range 1 và price range 2***
+
+<div>
+
+```{r}
+# x là explanatory variable
+# y là response variable
+
+# plot
+ggplot(Pricerange12,aes(x=as.character(Price.range),y=Votes))+
+  geom_boxplot()+
+  theme_classic()+
+  xlab("Price range")+
+    ylab("Votes")
+
+# summary statistics
+tapply(Pricerange12$Votes, factor(Pricerange12$Price.range), summary)
+
+
+```
+
+```{r}
+mu1 = mean(Pricerange1$Votes)
+mu2 = mean(Pricerange2$Votes)
+
+n1 = sum(table(Pricerange1$Votes))
+n2 = sum(table(Pricerange2$Votes))
+
+s1 = var(Pricerange1$Votes)
+s2 = var(Pricerange2$Votes)
+
+se = sqrt(s1/n1 + s2/n2)
+
+t = (mu1 - mu2)/se
+t
+v = (s1/n1 + s2/n2)^2/((s1/n1)^2/(n1-1) + (s2/n2)^2/(n2-1))
+v
+p_value = pt(q = t, df = v) 
+p_value
+```
+
+-   Kiểm tra lại `T-test` trong R
+
+    ```{r}
+    #Kiểm định H0: m1 - m2 = 0
+    #Phủ định giả thuyết Ha: m1 - m2 < 0 <=> m1 < m2
+    t.test(Pricerange12$Votes~Pricerange12$Price.range,alternative="less")
+    ```
+
+-   Kết quả: Vì $p$-value lớn hơn mức ý nghĩa $\alpha = 0.05$ nên ta chấp nhận giả thuyết Null hypothesis : $H_0$.
+
+***Kết luận 4.1***
+
+    -   Phân tích thăm dò cho thấy sự khác biệt về số votes giữa nhà hàng có mức price range 1 và price range 2. Cụ thể hơn, những nhà hàng có mức price range 2 thường có số vote cao hơn những nhà hàng có mức price range 1
+
+    -   Kiểm định thống kê cho ra giá trị $p$ rất nhỏ (về cơ bản là 0), cho thấy bằng chứng được cung cấp bởi dữ liệu đủ mạnh để bác bỏ $H_0$ và kết luận rằng tổng số votes giữa nhà hàngcó mức price range 1 là kém hơn đáng kể so với những nhà hàng có mức price range 2.
+
+</div>
+
+***4.2 Những nhà hàng có mức price range 3 và price range 4***
+
+<div>
+
+```{r}
+# x là explanatory variable
+# y là response variable
+
+# plot
+ggplot(Pricerange34,aes(x=as.character(Price.range),y=Votes))+
+  geom_boxplot()+
+  theme_classic()+
+  xlab("Price range")+
+    ylab("Votes")
+
+# summary statistics
+tapply(Pricerange34$Votes, factor(Pricerange34$Price.range), summary)
+
+```
+
+```{r}
+mu3 = mean(Pricerange3$Votes)
+mu4 = mean(Pricerange4$Votes)
+
+n3 = sum(table(Pricerange3$Votes))
+n4 = sum(table(Pricerange4$Votes))
+
+s3 = var(Pricerange3$Votes)
+s4 = var(Pricerange4$Votes)
+
+se = sqrt(s3/n3 + s4/n4)
+
+t = (mu3 - mu4)/se
+t
+v = (s3/n3 + s4/n4)^2/((s3/n3)^2/(n3-1) + (s4/n4)^2/(n4-1))
+v
+p_value = pt(q = t, df = v) 
+p_value
+```
+
+-   Kiểm tra lại = t-test
+
+```{r}
+#Kiểm định H02: mu3 - mu4 = 0
+#Kiểm định giả thuyết Ha2: mu3 - mu4 < 0 <=> mu3 < mu4
+t.test(Pricerange34$Votes~Pricerange34$Price.range,alternative="less")
+
+```
+
+-   Kết quả: Vì $p$-value lớn hơn mức ý nghĩa $\alpha = 0.05$ nên ta chấp nhận giả thuyết Null hypothesis : $H_0$.
+
+***Kết luận 4.2***
+
+    -   Phân tích thăm dò cho thấy không sự khác biệt về số votes giữa nhà hàng có mức price range 3 và price range 4.
+
+    -   Kiểm định thống kê cho ra giá trị $p$ lớn, cho thấy bằng chứng được cung cấp bởi dữ liệu không đủ mạnh để bác bỏ $H_0$ và kết luận rằng tổng số votes giữa nhà hàngcó mức price range 3 không chênh lệch đáng kể so với những nhà hàng có mức price range 4.
+
+</div>
+
+***4.3 Những nhà hàng có mức price range 2 và price range 3***
+
+<div>
+
+```{r}
+# x là explanatory variable
+# y là response variable
+
+# plot
+ggplot(Pricerange23,aes(x=as.character(Price.range),y=Votes))+
+  geom_boxplot()+
+  theme_classic()+
+  xlab("Price range")+
+    ylab("Votes")
+
+# summary statistics
+tapply(Pricerange23$Votes, factor(Pricerange23$Price.range), summary)
+```
+
+```{r}
+    se = sqrt(s2/n2 + s3/n3)
+    t = (mu2 - mu3)/se
+    t
+    v = (s2/n2 + s3/n3)^2/((s2/n2)^2/(n2-1) + (s3/n3)^2/(n3-1))
+    v
+    p_value = pt(q = t, df = v) 
+    p_value
+```
+
+```{r}
+    #Kiểm định H03: mu2 - mu3 = 0
+    #Kiểm định giả thuyết Ha3: mu2 - mu3 < 0 <=> mu2 < mu3
+    t.test(Pricerange23$Votes~Pricerange23$Price.range,alternative="less")
+
+```
+
+-   Kết quả: Vì $p$-value nhỏ hơn mức ý nghĩa $\alpha = 0.05$ nên ta bác bỏ giả thuyết Null hypothesis : $H_0$.
+
+***Kết luận 4.3***
+
+    -   Phân tích thăm dò cho thấy sự khác biệt về số votes giữa nhà hàng có mức price range 2 và price range 3. Cụ thể hơn, những nhà hàng có mức price range 3 thường có số vote cao hơn những nhà hàng có mức price range 2
+
+    -   Kiểm định thống kê cho ra giá trị $p$ rất nhỏ, cho thấy bằng chứng được cung cấp bởi dữ liệu đủ mạnh để bác bỏ $H_0$ và kết luận rằng tổng số votes giữa nhà hàngcó mức price range 2 là kém hơn đáng kể so với những nhà hàng có mức price range 3.
+
+</div>
+
+**Rút ra kết luận chung cho câu hỏi 4**
+
+-   Phân tích thăm dò cho thấy sự khác biệt về số votes giữa nhà hàng có mức price range 1,2,3,4. Cụ thể hơn, những nhà hàng có mức price range 3,4 thường có số vote cao hơn những nhà hàng có mức price range 2 và cao hơn nhà hàng có mức price range 1
+
+-   Dữ liệu có cung cấp bằng chứng nhưng chưa đủ mạnh để kết luận rằng "hiệu ứng cấp độ" ảnh hưởng đáng kể đến tổng số vote của mỗi nhà hàng.
+
+-   Ngoài ra , dữ liệu không cung cấp bằng chứng cho thấy Price range là nguyên nhân giúp nhà hàng có nhiều lượt votes hơn! Vì đây là một nghiên cứu quan sát, không có kết luận nhân quả nào có thể được đưa ra. Trường hợp duy nhất mà từ có mối quan hệ có thể suy ra nhân quả (association implies causation) là khi nghiên cứu là một thí nghiệm ngẫu nhiên. Có thể giải thích cho sự khác biệt giữa các nhóm kiểu nhà hàng là những nhà hàng ngoài mức giá thức ăn hợp lý thì còn phụ thuộc vào chất lượng món ăn và dịch vụ chăm sóc khách hàng cũng tốt hơn nên sẽ nhân được lượng vote nhiều hơn
+
+-   Kết quả này có thể được cung cấp cho các nhà hàng để phát triển hơn, nhưng nên lưu ý với họ rằng không chỉ là mức giá thức ăn ở nhà hàng mà còn là chất lượng phục vụ và món ăn của nhà hàng mới là những yếu tô quyết định
+
+## .Kết luận
+
+Đây là một nghiên cứu quan sát, không có kết luận nhân quả nào có thể được đưa ra. Trường hợp duy nhất mà từ có mối quan hệ có thể suy ra nhân quả (association implies causation) là khi nghiên cứu là một thí nghiệm ngẫu nhiên. Có thể giải thích cho sự khác biệt giữa hai nhóm kiểu nhà hàng là những nhà hàng có giao hàng online sẽ thuận tiện hơn cho khách ở xa dịch vụ chăm sóc khách hàng cũng tốt hơn nên sẽ nhân được lượng vote nhiều hơn.
+
+Kết quả này có thể được cung cấp cho các nhà hàng để phát triển hơn, nhưng nên lưu ý với họ rằng không chỉ là có giao hàng online mà còn là chất lượng phục vụ và món ăn của nhà hàng mới là những yếu tô quyết định\
+
+## 7.Đóng góp
+
+|                                                                                                    | Trần Văn Thắng | Trần Minh Đức | Lê Minh Hoàng |
+|:-----------------:|:----------------:|:----------------:|:----------------:|
+|                                 chuẩn bị đề tài, đọc lướt dữ liệu                                  |       x        |       x       |       x       |
+|                                    đăt và trả lời các câu hỏi:                                     |       x        |       x       |       x       |
+|                                             câu hỏi 1                                              |       x        |       x       |               |
+|                                             câu hỏi 2                                              |                |       x       |       x       |
+|                                             câu hỏi 3                                              |       x        |               |       x       |
+|                                             câu hỏi 4                                              |       x        |       x       |       x       |
+|                                        đưa ra các kết luận                                         |       x        |       x       |       x       |
+| Tìm hiểu về các phương pháp để phân tích dữ liệu như phân tích dữ liệu thăm dò, kiểm định thống kê |       x        |       x       |       x       |
+|                                                                                                    |      100%      |     100%      |     100%      |
